@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Детали блюда — OshPOS</title>
+  <style>
+    :root { --primary: #ff5722; --dark: #1e1e24; --bg: #f8f9fa; }
+    body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; margin: 0; background: var(--bg); color: #333; }
+    .container { max-width: 800px; margin: 30px auto; padding: 0 20px; }
+    .back-link { display: inline-block; margin-bottom: 20px; color: var(--primary); text-decoration: none; font-weight: 600; }
+    .box { background: white; padding: 25px; border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.05); margin-bottom: 25px; }
+    .price { font-size: 24px; font-weight: bold; color: var(--primary); margin: 15px 0; }
+    .btn { background: var(--primary); color: white; border: none; padding: 12px 20px; border-radius: 8px; cursor: pointer; font-weight: 600; }
+    .btn:hover { background: #e64a19; }
+    .form-group { margin-bottom: 15px; }
+    .form-group input, .form-group select, .form-group textarea { width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 6px; box-sizing: border-box; }
+    .review-item { border-bottom: 1px solid #eee; padding: 15px 0; }
+    .review-item:last-child { border-bottom: none; }
+    .review-header { display: flex; justify-content: space-between; font-weight: 600; margin-bottom: 5px; }
+    .stars { color: #ffb400; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <a href="index.html" class="back-link">← Вернуться в меню</a>
+    
+    <div class="box" id="dish-details">Загрузка деталей...</div>
+
+    <div class="box">
+      <h3>Оставить отзыв (MongoDB)</h3>
+      <div class="form-group">
+        <input type="text" id="rev-name" placeholder="Ваше имя">
+      </div>
+      <div class="form-group">
+        <select id="rev-rating">
+          <option value="5">⭐⭐⭐⭐⭐ (5 - Отлично)</option>
+          <option value="4">⭐⭐⭐⭐ (4 - Хорошо)</option>
+          <option value="3">⭐⭐⭐ (3 - Удовлетворительно)</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <textarea id="rev-comment" rows="3" placeholder="Ваш отзыв о блюде..."></textarea>
+      </div>
+      <button class="btn" onclick="sendReview()">Опубликовать отзыв</button>
+    </div>
+
+    <div class="box">
+      <h3>Отзывы клиентов</h3>
+      <div id="reviews-list">Загрузка отзывов...</div>
+    </div>
+  </div>
+
+  <script src="app.js"></script>
+  <script>
+    const urlParams = new URLSearchParams(window.location.search);
+    const dishId = urlParams.get('id');
+
+    async function loadDishDetails() {
+      const res = await fetch(`${API_URL}/dishes/${dishId}`);
+      const data = await res.json();
+      if (!data.success) return alert('Блюдо не найдено');
+
+      const dish = data.data;
+      document.getElementById('dish-details').innerHTML = `
+        <h2 style="margin: 0 0 10px 0;">${dish.name}</h2>
+        <div class="price">${dish.price} сум</div>
+        <p style="color: #666;">В наличии на кухне: <b>${dish.stock_quantity} шт.</b></p>
+        <button class="btn" onclick="addToCart(${dish.dish_id}, '${dish.name}', ${dish.price})">Добавить в корзину</button>
+      `;
+
+      const revList = document.getElementById('reviews-list');
+      revList.innerHTML = '';
+      if (dish.reviews && dish.reviews.length > 0) {
+        dish.reviews.forEach(r => {
+          revList.innerHTML += `
+            <div class="review-item">
+              <div class="review-header">
+                <span>${r.user_name}</span>
+                <span class="stars">${'★'.repeat(r.rating)}</span>
+              </div>
+              <div>${r.comment}</div>
+            </div>
+          `;
+        });
+      } else {
+        revList.innerHTML = '<p style="color: #888;">Отзывов пока нет. Будьте первыми!</p>';
+      }
+    }
+
+    async function sendReview() {
+      const name = document.getElementById('rev-name').value;
+      const rating = document.getElementById('rev-rating').value;
+      const comment = document.getElementById('rev-comment').value;
+
+      await fetch(`${API_URL}/reviews`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ dish_id: dishId, user_name: name, rating, comment })
+      });
+      alert('Отзыв сохранен!');
+      loadDishDetails();
+    }
+
+    loadDishDetails();
+  </script>
+</body>
+</html>
