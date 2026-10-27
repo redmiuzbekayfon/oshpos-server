@@ -33,17 +33,7 @@ function sanitizeText(str) {
 // 1. Список блюд (PostgreSQL)
 app.get('/api/dishes', async (req, res) => {
   try {
-    const search = sanitizeText(req.query.search || '');
-    let query = 'SELECT * FROM dishes WHERE stock_quantity > 0';
-    let values = [];
-
-    if (search) {
-      query += ' AND LOWER(name) LIKE LOWER($1)';
-      values.push(`%${search}%`);
-    }
-
-    query += ' ORDER BY dish_id ASC';
-    const result = await pgPool.query(query, values);
+    const result = await pgPool.query('SELECT * FROM dishes');
     res.json({ success: true, data: result.rows });
   } catch (err) {
     res.status(500).json({ success: false, error: err.message });
