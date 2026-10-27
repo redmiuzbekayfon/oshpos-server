@@ -5,9 +5,7 @@ require('dotenv').config();
 // Подключение к PostgreSQL (Supabase) через единый DATABASE_URL с поддержкой SSL
 const pgPool = new Pool({
   connectionString: process.env.DATABASE_URL,
-  ssl: {
-    rejectUnauthorized: false
-  }
+  ssl: process.env.DATABASE_URL ? { rejectUnauthorized: false } : false
 });
 
 const mongoClient = new MongoClient(process.env.MONGODB_URI);
