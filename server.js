@@ -34,7 +34,16 @@ function sanitizeText(str) {
 app.get('/api/dishes', async (req, res) => {
   try {
     const result = await pgPool.query('SELECT * FROM dishes');
-    res.json({ success: true, data: result.rows });
+    
+    // Проверяем список всех таблиц в подключенной БД
+    const tables = await pgPool.query("SELECT table_name FROM information_schema.tables WHERE table_schema='public'");
+    
+    res.json({
+      success: true,
+      rowCount: result.rowCount,
+      data: result.rows,
+      connectedTables: tables.rows.map(t => t.table_name)
+    });
   } catch (err) {
     res.status(500).json({ success: false, error: err.message });
   }
